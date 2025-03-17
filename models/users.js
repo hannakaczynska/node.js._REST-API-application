@@ -1,3 +1,5 @@
+const jwt = require("jsonwebtoken");
+
 const User = require("./schemas/userSchema");
 
 const registerUser = async (body) => {
@@ -17,14 +19,19 @@ const loginUser = async (body) => {
   const user = await User.findOne({
     email,
   });
-  if (!user) {
+  if (!user || !user.validPassword(password)) {
     return false;
+  } else {
+    const payload = { id: user._id };
+    const token = jwt.sign(payload, process.env.SECRET, { expiresIn: "1h" });
+
+    const updatedUser = await User.findByIdAndUpdate(
+      { _id: user._id },
+      { $set: { token } },
+      { new: true }
+    );
+    return updatedUser;
   }
-  const isValid = user.validPassword(password);
-  if (!isValid) {
-    return false;
-  }
-  return user;
 };
 
 module.exports = {
