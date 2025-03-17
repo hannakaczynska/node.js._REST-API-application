@@ -12,6 +12,22 @@ const registerUser = async (body) => {
   return newUser;
 };
 
+const loginUser = async (body) => {
+  const { email, password } = body;
+  const user = await User.findOne({
+    email,
+  });
+  if (!user) {
+    return false;
+  }
+  const isValid = user.validPassword(password);
+  if (!isValid) {
+    return false;
+  }
+  return user;
+};
+
 module.exports = {
   registerUser,
+  loginUser,
 };

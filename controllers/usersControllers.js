@@ -1,4 +1,4 @@
-const { registerUser } = require("../models/users");
+const { registerUser, loginUser } = require("../models/users");
 const Joi = require("@hapi/joi");
 
 const schema = Joi.object({
@@ -34,6 +34,37 @@ const addUser = async (req, res, next) => {
   }
 };
 
+const checkUser = async (req, res, next) => {
+    const result = schema.validate(req.body);
+    if (result.error) {
+        return res.status(400).json({
+        status: "error",
+        code: 400,
+        message: result.error.message,
+        });
+    }
+    try {
+        const user = await loginUser(req.body);
+        if (!user) {
+        return res.status(401).json({
+            status: "error",
+            code: 401,
+            message: "Email or password is wrong",
+        });
+        }
+        res.status(200).json({
+        status: "success",
+        code: 200,
+        token: user.token,
+        user: { email: user.email, subscription: user.subscription },
+        });
+    } catch (err) {
+        next(err);
+    }
+    };
+
+
 module.exports = {
   addUser,
+  checkUser,
 };
