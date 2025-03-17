@@ -1,11 +1,11 @@
 const Contact = require("./schemas/contactSchema");
 
-const listContacts = async ({limit, skip}) => {
+const listContacts = async ({limit, skip, favorite}) => {
   if (limit) {
-    const contacts = await Contact.find().skip(skip).limit(limit);
+    const contacts = await Contact.find({favorite: favorite}).skip(skip).limit(limit);
     return contacts;
   } else {
-  const contacts = await Contact.find();
+  const contacts = await Contact.find({favorite: favorite});
   return contacts;
   }
 };

@@ -20,9 +20,9 @@ const favoriteSchema = Joi.object({
 
 const getContacts = async (req, res, next) => {
   try {
-    const { page, limit } = req.query;
+    const { page, limit, favorite } = req.query;
     const skip = page ? (page - 1) * limit : 0;
-    const contacts = await listContacts({ limit, skip });
+    const contacts = await listContacts({ limit, skip, favorite });
     res.status(200).json({
       status: "success",
       code: 200,
