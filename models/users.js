@@ -34,7 +34,18 @@ const loginUser = async (body) => {
   }
 };
 
+const logoutUser = async (id) => {
+  const user = await User.findById({ _id: id }); 
+  if (!user) {
+    return false;
+  }
+  user.token = null;
+  await user.save();
+  return true;
+};
+
 module.exports = {
   registerUser,
   loginUser,
+  logoutUser,
 };
