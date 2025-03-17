@@ -52,9 +52,23 @@ const currentUser = async (id) => {
   return user;
 }
 
+const updateUserSubscription = async (id, body) => {
+  const user = await User.findById({ _id: id });
+  if (!user) {
+    return false;
+  } 
+  const updatedUser = await User.findByIdAndUpdate(
+    { _id: id  },
+    { $set: body },
+    { new: true }
+  );
+  return updatedUser;
+}
+
 module.exports = {
   registerUser,
   loginUser,
   logoutUser,
   currentUser,
+  updateUserSubscription
 };

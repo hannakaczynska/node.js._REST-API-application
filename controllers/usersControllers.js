@@ -1,9 +1,13 @@
-const { registerUser, loginUser, logoutUser, currentUser } = require("../models/users");
+const { registerUser, loginUser, logoutUser, currentUser, updateUserSubscription } = require("../models/users");
 const Joi = require("@hapi/joi");
 
 const schema = Joi.object({
   email: Joi.string().email().required(),
   password: Joi.string().min(6).required(),
+});
+
+const subscriptionSchema = Joi.object({
+  subscription: Joi.string().valid('starter', 'pro', 'business').required(),
 });
 
 const addUser = async (req, res, next) => {
@@ -102,9 +106,38 @@ const showUser = async (req, res, next) => {
     }
 };
 
+const changeSubscription = async (req, res, next) => {
+  const result = subscriptionSchema.validate(req.body);
+  if (result.error) {
+    return res.status(400).json({
+      status: "error",
+      code: 400,
+      message: result.error.message,
+    });
+  } try {
+const user = await updateUserSubscription(req.user._id, req.body);
+if (!user) {
+  return res.status(401).json({
+    status: "error",
+    code: 401,
+    message: "Not authorized",
+  });
+}
+res.status(200).json({  
+  status: "success",
+  code: 200,
+  user: { email: user.email, subscription: user.subscription },
+});
+
+  } catch (err) {
+    next(err);
+  }
+}
+
 module.exports = {
   addUser,
   checkUser,
   removeUser,
   showUser,
+  changeSubscription,
 };
