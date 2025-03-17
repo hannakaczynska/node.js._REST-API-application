@@ -1,4 +1,4 @@
-const { registerUser, loginUser, logoutUser } = require("../models/users");
+const { registerUser, loginUser, logoutUser, currentUser } = require("../models/users");
 const Joi = require("@hapi/joi");
 
 const schema = Joi.object({
@@ -82,8 +82,29 @@ const removeUser = async (req, res, next) => {
   }
 };
 
+const showUser = async (req, res, next) => {
+    try {
+    const user = await currentUser(req.user._id);       
+    if (!user) {
+      return res.status(401).json({
+        status: "error",
+        code: 401,
+        message: "Not authorized",
+      });
+    }
+    res.status(200).json({
+      status: "success",
+      code: 200,
+      user: { email: user.email, subscription: user.subscription },
+    });
+    } catch (err) {
+    next(err);
+    }
+};
+
 module.exports = {
   addUser,
   checkUser,
   removeUser,
+  showUser,
 };

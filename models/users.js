@@ -44,8 +44,17 @@ const logoutUser = async (id) => {
   return true;
 };
 
+const currentUser = async (id) => {
+  const user = await User.findById({ _id: id });
+  if (!user) {
+    return false;
+  } 
+  return user;
+}
+
 module.exports = {
   registerUser,
   loginUser,
   logoutUser,
+  currentUser,
 };
