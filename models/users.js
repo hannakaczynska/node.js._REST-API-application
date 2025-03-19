@@ -1,4 +1,5 @@
 const jwt = require("jsonwebtoken");
+const gravatar = require("gravatar");
 
 const User = require("./schemas/userSchema");
 
@@ -8,7 +9,8 @@ const registerUser = async (body) => {
   if (existingUser) {
     return false;
   }
-  const newUser = new User({ email });
+  const avatarURL = gravatar.url(email, { s: '200', r: 'pg', d: 'mm' });
+  const newUser = new User({ email, avatarURL });
   newUser.setPassword(password);
   await newUser.save();
   return newUser;
