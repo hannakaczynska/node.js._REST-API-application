@@ -52,7 +52,7 @@ const currentUser = async (id) => {
     return false;
   } 
   return user;
-}
+};
 
 const updateUserSubscription = async (id, body) => {
   const user = await User.findById({ _id: id });
@@ -65,12 +65,26 @@ const updateUserSubscription = async (id, body) => {
     { new: true }
   );
   return updatedUser;
-}
+};
+
+const updateAvatar = async (id, avatarURL) => {
+  const user = await User.findById({ _id: id });
+  if (!user) {
+    return false;
+  } 
+  const updatedUser = await User.findByIdAndUpdate(
+    { _id: id },
+    { $set: { avatarURL } },
+    { new: true }
+  );
+  return updatedUser;
+};
 
 module.exports = {
   registerUser,
   loginUser,
   logoutUser,
   currentUser,
-  updateUserSubscription
+  updateUserSubscription,
+  updateAvatar,
 };

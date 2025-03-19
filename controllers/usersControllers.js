@@ -1,4 +1,4 @@
-const { registerUser, loginUser, logoutUser, currentUser, updateUserSubscription } = require("../models/users");
+const { registerUser, loginUser, logoutUser, currentUser, updateUserSubscription, updateAvatar } = require("../models/users");
 const Joi = require("@hapi/joi");
 
 const schema = Joi.object({
@@ -134,10 +134,32 @@ res.status(200).json({
   }
 }
 
+const changeAvatar = async (req, res, next) => {
+  console.log(req.file);
+  try {
+    const user = await updateAvatar(req.user._id, req.file.path);
+    if (!user) {
+      return res.status(401).json({
+        status: "error",
+        code: 401,
+        message: "Not authorized",
+      });
+    }
+    res.status(200).json({
+      status: "success",
+      code: 200,
+      avatarURL: user.avatarURL,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
 module.exports = {
   addUser,
   checkUser,
   removeUser,
   showUser,
   changeSubscription,
+  changeAvatar
 };
