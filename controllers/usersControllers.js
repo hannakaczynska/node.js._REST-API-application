@@ -66,6 +66,13 @@ const checkUser = async (req, res, next) => {
         code: 401,
         message: "Email or password is wrong",
       });
+    } 
+    if (user === "Verification required") {
+      return res.status(401).json({
+        status: "error",
+        code: 401,
+        message: "Email not verified",
+      });
     }
     res.status(200).json({
       status: "success",

@@ -15,7 +15,7 @@ const registerUser = async (body) => {
   const verificationToken = nanoid();
   const newUser = new User({ email, avatarURL, verificationToken });
   newUser.setPassword(password);
-  
+
   await newUser.save();
 
   const verificationLink = `${process.env.BASE_URL}/api/users/verify/${verificationToken}`;
@@ -31,6 +31,8 @@ const loginUser = async (body) => {
   });
   if (!user || !user.validPassword(password)) {
     return false;
+  } else if (!user.verify) {
+    return "Verification required";
   } else {
     const payload = { id: user._id };
     const token = jwt.sign(payload, process.env.SECRET, { expiresIn: "1h" });
