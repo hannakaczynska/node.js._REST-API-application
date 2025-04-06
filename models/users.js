@@ -1,7 +1,9 @@
 const jwt = require("jsonwebtoken");
 const gravatar = require("gravatar");
+const { nanoid } = require("nanoid");
 
 const User = require("./schemas/userSchema");
+const sendVerificationEmail = require("../utils/sendEmail");
 
 const registerUser = async (body) => {
   const { email, password } = body;
@@ -9,10 +11,16 @@ const registerUser = async (body) => {
   if (existingUser) {
     return false;
   }
-  const avatarURL = gravatar.url(email, { s: '200', r: 'pg', d: 'mm' });
-  const newUser = new User({ email, avatarURL });
+  const avatarURL = gravatar.url(email, { s: "200", r: "pg", d: "mm" });
+  const verificationToken = nanoid();
+  const newUser = new User({ email, avatarURL, verificationToken });
   newUser.setPassword(password);
+  
   await newUser.save();
+
+  const verificationLink = `${process.env.BASE_URL}/api/users/verify/${verificationToken}`;
+  await sendVerificationEmail(verificationLink);
+
   return newUser;
 };
 
@@ -37,7 +45,7 @@ const loginUser = async (body) => {
 };
 
 const logoutUser = async (id) => {
-  const user = await User.findById({ _id: id }); 
+  const user = await User.findById({ _id: id });
   if (!user) {
     return false;
   }
@@ -50,7 +58,7 @@ const currentUser = async (id) => {
   const user = await User.findById({ _id: id });
   if (!user) {
     return false;
-  } 
+  }
   return user;
 };
 
@@ -58,9 +66,9 @@ const updateUserSubscription = async (id, body) => {
   const user = await User.findById({ _id: id });
   if (!user) {
     return false;
-  } 
+  }
   const updatedUser = await User.findByIdAndUpdate(
-    { _id: id  },
+    { _id: id },
     { $set: body },
     { new: true }
   );
@@ -71,13 +79,27 @@ const updateAvatar = async (id, avatarURL) => {
   const user = await User.findById({ _id: id });
   if (!user) {
     return false;
-  } 
+  }
   const updatedUser = await User.findByIdAndUpdate(
     { _id: id },
     { $set: { avatarURL } },
     { new: true }
   );
   return updatedUser;
+};
+
+const verifyUserEmail = async (verificationToken) => {
+  const isVeryfied = await User.findOne({ verificationToken });
+  if (!isVeryfied) {
+    return false;
+  } else {
+    await User.findOneAndUpdate(
+      { verificationToken },
+      { $set: { verify: true }, $unset: { verificationToken: null } },
+      { new: true }
+    );
+    return true;
+  }
 };
 
 module.exports = {
@@ -87,4 +109,5 @@ module.exports = {
   currentUser,
   updateUserSubscription,
   updateAvatar,
+  verifyUserEmail,
 };

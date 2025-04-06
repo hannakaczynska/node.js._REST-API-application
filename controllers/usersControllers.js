@@ -5,6 +5,7 @@ const {
   currentUser,
   updateUserSubscription,
   updateAvatar,
+  verifyUserEmail,
 } = require("../models/users");
 const Joi = require("@hapi/joi");
 const Jimp = require("jimp");
@@ -175,6 +176,26 @@ const changeAvatar = async (req, res, next) => {
   }
 };
 
+const checkUserVerification = async (req, res, next) => {
+  try {
+    const user = await verifyUserEmail(req.params.verificationToken);
+    if (!user) {
+      return res.status(404).json({
+        status: "error",
+        code: 404,
+        message: "User not found",
+      });
+    }
+    return res.status(200).json({
+      status: "success",
+      code: 200,
+      message: "Verification successful",
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
 module.exports = {
   addUser,
   checkUser,
@@ -182,4 +203,5 @@ module.exports = {
   showUser,
   changeSubscription,
   changeAvatar,
+  checkUserVerification,
 };
