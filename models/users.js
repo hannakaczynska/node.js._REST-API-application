@@ -1,7 +1,9 @@
 const jwt = require("jsonwebtoken");
 const gravatar = require("gravatar");
+const { nanoid } = require("nanoid");
 
 const User = require("./schemas/userSchema");
+const sendVerificationEmail = require("../utils/sendEmail");
 
 const registerUser = async (body) => {
   const { email, password } = body;
@@ -9,10 +11,16 @@ const registerUser = async (body) => {
   if (existingUser) {
     return false;
   }
-  const avatarURL = gravatar.url(email, { s: '200', r: 'pg', d: 'mm' });
-  const newUser = new User({ email, avatarURL });
+  const avatarURL = gravatar.url(email, { s: "200", r: "pg", d: "mm" });
+  const verificationToken = nanoid();
+  const newUser = new User({ email, avatarURL, verificationToken });
   newUser.setPassword(password);
+
   await newUser.save();
+
+  const verificationLink = `${process.env.BASE_URL}/api/users/verify/${verificationToken}`;
+  await sendVerificationEmail(verificationLink);
+
   return newUser;
 };
 
@@ -23,6 +31,8 @@ const loginUser = async (body) => {
   });
   if (!user || !user.validPassword(password)) {
     return false;
+  } else if (!user.verify) {
+    return "Verification required";
   } else {
     const payload = { id: user._id };
     const token = jwt.sign(payload, process.env.SECRET, { expiresIn: "1h" });
@@ -37,7 +47,7 @@ const loginUser = async (body) => {
 };
 
 const logoutUser = async (id) => {
-  const user = await User.findById({ _id: id }); 
+  const user = await User.findById({ _id: id });
   if (!user) {
     return false;
   }
@@ -50,7 +60,7 @@ const currentUser = async (id) => {
   const user = await User.findById({ _id: id });
   if (!user) {
     return false;
-  } 
+  }
   return user;
 };
 
@@ -58,9 +68,9 @@ const updateUserSubscription = async (id, body) => {
   const user = await User.findById({ _id: id });
   if (!user) {
     return false;
-  } 
+  }
   const updatedUser = await User.findByIdAndUpdate(
-    { _id: id  },
+    { _id: id },
     { $set: body },
     { new: true }
   );
@@ -71,7 +81,7 @@ const updateAvatar = async (id, avatarURL) => {
   const user = await User.findById({ _id: id });
   if (!user) {
     return false;
-  } 
+  }
   const updatedUser = await User.findByIdAndUpdate(
     { _id: id },
     { $set: { avatarURL } },
@@ -80,6 +90,32 @@ const updateAvatar = async (id, avatarURL) => {
   return updatedUser;
 };
 
+const verifyUserEmail = async (verificationToken) => {
+  const isVeryfied = await User.findOne({ verificationToken });
+  if (!isVeryfied) {
+    return false;
+  } else {
+    await User.findOneAndUpdate(
+      { verificationToken },
+      { $set: { verify: true, verificationToken: null } },
+      { new: true }
+    );
+    return true;
+  }
+};
+
+const sendEmail = async (email) => {
+  const user = await User.findOne({ email });
+  if (!user) {
+    return "User not found";
+  }
+  if (user.verify) {
+    return "isVerified";
+  }
+  const verificationLink = `${process.env.BASE_URL}/api/users/verify/${user.verificationToken}`;
+  await sendVerificationEmail(verificationLink);
+  return true;
+}
 module.exports = {
   registerUser,
   loginUser,
@@ -87,4 +123,6 @@ module.exports = {
   currentUser,
   updateUserSubscription,
   updateAvatar,
+  verifyUserEmail,
+  sendEmail,
 };
