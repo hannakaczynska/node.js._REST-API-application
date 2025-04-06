@@ -97,13 +97,25 @@ const verifyUserEmail = async (verificationToken) => {
   } else {
     await User.findOneAndUpdate(
       { verificationToken },
-      { $set: { verify: true }, $unset: { verificationToken: null } },
+      { $set: { verify: true, verificationToken: null } },
       { new: true }
     );
     return true;
   }
 };
 
+const sendEmail = async (email) => {
+  const user = await User.findOne({ email });
+  if (!user) {
+    return "User not found";
+  }
+  if (user.verify) {
+    return "isVerified";
+  }
+  const verificationLink = `${process.env.BASE_URL}/api/users/verify/${user.verificationToken}`;
+  await sendVerificationEmail(verificationLink);
+  return true;
+}
 module.exports = {
   registerUser,
   loginUser,
@@ -112,4 +124,5 @@ module.exports = {
   updateUserSubscription,
   updateAvatar,
   verifyUserEmail,
+  sendEmail,
 };

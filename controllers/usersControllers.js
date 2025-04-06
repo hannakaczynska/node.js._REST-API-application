@@ -6,6 +6,7 @@ const {
   updateUserSubscription,
   updateAvatar,
   verifyUserEmail,
+  sendEmail,
 } = require("../models/users");
 const Joi = require("@hapi/joi");
 const Jimp = require("jimp");
@@ -19,6 +20,10 @@ const schema = Joi.object({
 
 const subscriptionSchema = Joi.object({
   subscription: Joi.string().valid("starter", "pro", "business").required(),
+});
+
+const emailSchema = Joi.object({
+  email: Joi.string().email().required(),
 });
 
 const addUser = async (req, res, next) => {
@@ -66,7 +71,7 @@ const checkUser = async (req, res, next) => {
         code: 401,
         message: "Email or password is wrong",
       });
-    } 
+    }
     if (user === "Verification required") {
       return res.status(401).json({
         status: "error",
@@ -203,6 +208,41 @@ const checkUserVerification = async (req, res, next) => {
   }
 };
 
+const checkUserEmailVerification = async (req, res, next) => {
+    const result = emailSchema.validate(req.body);
+  if (result.error) {
+    return res.status(400).json({
+      status: "error",
+      code: 400,
+      message: result.error.message,
+    });
+  }
+  try {
+    const verified = await sendEmail(req.body.email);
+    if (verified === "User not found") {
+      return res.status(404).json({
+        status: "error",
+        code: 404,
+        message: "User not found",
+      });
+    }
+    if (verified === "isVerified") {
+      return res.status(400).json({
+        status: "error",
+        code: 400,
+        message: "Verification has already been passed",
+      });
+    }
+    return res.status(200).json({
+      status: "success",
+      code: 200,
+      message: "Verification email sent",
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
 module.exports = {
   addUser,
   checkUser,
@@ -211,4 +251,5 @@ module.exports = {
   changeSubscription,
   changeAvatar,
   checkUserVerification,
+  checkUserEmailVerification,
 };
